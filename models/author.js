@@ -8,7 +8,7 @@ var AuthorSchema = new Schema(
     first_name: {type: String, required: true, max: 100},
     family_name: {type: String, required: true, max: 100},
     date_of_birth: {type: Date},
-    date_of_death: {type: Date},    
+    date_of_death: {type: Date},
   }
 );
 
@@ -23,7 +23,7 @@ AuthorSchema
 AuthorSchema
 .virtual('lifespan')
 .get(function(){
-  return (this.date_of_death.getYear() - this.date_of_birth.getYear()).toString();  
+  return (this.date_of_death.getYear() - this.date_of_birth.getYear()).toString();
 })
 
 // Virtual for author's URL
@@ -37,6 +37,18 @@ AuthorSchema
 .virtual('lifespan_formatted')
 .get(function(){
   return "" + moment(this.date_of_birth).format("MMM Do YYYY") + " - " + (moment(this.date_of_death) ? moment(this.date_of_death).format('MMM Do YYYY') : '') + "";
+})
+
+AuthorSchema
+.virtual('dob_formatted')
+.get(function(){
+  return "" + moment(this.date_of_birth).format("YYYY-MM-DD");
+})
+
+AuthorSchema
+.virtual('dod_formatted')
+.get(function(){
+  return "" + moment(this.date_of_death).format("YYYY-MM-DD");
 })
 
 module.exports = mongoose.model('Author', AuthorSchema);

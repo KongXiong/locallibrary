@@ -24,12 +24,10 @@ exports.genre_detail = function(req, res, next) {
 						Genre.findById(req.params.id)
 							.exec(callback);
 				},
-
 				genre_books: function(callback) {
 					Book.find({ 'genre': req.params.id })
 					.exec(callback);
 				},
-
 		}, function(err, results) {
 				if (err) { return next(err); }
 				if (results.genre==null) { // No results.
@@ -78,24 +76,20 @@ exports.genre_create_post =  [
 						// Data from form is valid.
 						// Check if Genre with same name already exists.
 						Genre.findOne({ 'name': req.body.name })
-								.exec( function(err, found_genre) {
+								.exec(function (err, found_genre) {
 										 if (err) { return next(err); }
-
 										 if (found_genre) {
 												 // Genre exists, redirect to its detail page.
 												 res.redirect(found_genre.url);
 										 }
 										 else {
-
 												 genre.save(function (err) {
 													 if (err) { return next(err); }
 													 // Genre saved. Redirect to genre detail page.
 													 res.redirect(genre.url);
 												 });
-
 										 }
-
-								 });
+								});
 				}
 		}
 ];
@@ -147,11 +141,52 @@ exports.genre_delete_post = function(req, res) {
 };
 
 // Display Genre update form on GET.
-exports.genre_update_get = function(req, res) {
-		res.send('NOT IMPLEMENTED: Genre update GET');
+exports.genre_update_get = function(req, res, next) {
+    Genre.findById(req.params.id, function(err, genre) {
+        if (err) { return next(err); }
+        if (genre==null) {
+            var err = new Error('Genre not found');
+            err.status = 404;
+            return next(err);
+        }
+        res.render('genre_form', { title: 'Update Genre', genre: genre });
+    });
 };
 
 // Handle Genre update on POST.
-exports.genre_update_post = function(req, res) {
-		res.send('NOT IMPLEMENTED: Genre update POST');
-};
+exports.genre_update_post = [
+    // Validate fields.
+    body('name', 'Title must not be empty.').isLength({ min: 1 }).trim(),
+
+    // Sanitize fields.
+    sanitizeBody('name').trim().escape(),
+
+    // Process request after validation and sanitization.
+    (req, res, next) => {
+
+        // Extract the validation errors from a request.
+        const errors = validationResult(req);
+
+        // Create a Book object with escaped/trimmed data and old id.
+        var genre = new Genre(
+          { 
+          	name: req.body.name,
+            _id:req.params.id //This is required, or a new ID will be assigned!
+          }
+        );
+
+        if (!errors.isEmpty()) {
+            // There are errors. Render form again with sanitized values/error messages.
+            res.render('genre_form', { title: 'Update Genre', genre: results.genre, errors: errors.array });
+            return;
+        }
+        else {
+            // Data from form is valid. Update the record.
+            Genre.findByIdAndUpdate(req.params.id, genre, {}, function (err,thegenre) {
+                if (err) { return next(err); }
+                   // Successful - redirect to genre detail page.
+                   res.redirect(thegenre.url);
+                });
+        }
+    }
+];
